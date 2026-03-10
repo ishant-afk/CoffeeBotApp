@@ -2,10 +2,10 @@ import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
 // Netlify injects environment variables defined in the Netlify UI properly
 const lambdaClient = new LambdaClient({
-  region: process.env.AWS_REGION || 'eu-north-1',
+  region: process.env.MY_AWS_REGION || 'eu-north-1',
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY,
   }
 });
 
