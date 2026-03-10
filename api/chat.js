@@ -1,6 +1,5 @@
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 
-// Netlify injects environment variables defined in the Netlify UI properly
 const lambdaClient = new LambdaClient({
   region: process.env.MY_AWS_REGION || 'eu-north-1',
   credentials: {
@@ -9,27 +8,33 @@ const lambdaClient = new LambdaClient({
   }
 });
 
-export default async function handler(req, res) {
-  // CORS configuration if needed
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export const handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  };
 
   // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (event.httpMethod !== 'POST') {
+    return { 
+      statusCode: 405, 
+      headers, 
+      body: JSON.stringify({ error: 'Method Not Allowed' }) 
+    };
   }
 
   try {
-    let body = req.body;
+    let body = event.body;
     if (typeof body === 'string') {
       body = JSON.parse(body);
     }
 
+    // Isolate messages logic for Python Lambda
     const lambdaPayload = {
       input: {
         messages: body.messages
@@ -45,10 +50,18 @@ export default async function handler(req, res) {
     const response = await lambdaClient.send(command);
     const responsePayload = Buffer.from(response.Payload).toString('utf-8');
     
-    return res.status(200).json(JSON.parse(responsePayload));
+    return {
+      statusCode: 200,
+      headers,
+      body: responsePayload
+    };
     
   } catch (err) {
     console.error('Lambda Error:', err);
-    return res.status(500).json({ error: err.message || JSON.stringify(err) });
+    return { 
+      statusCode: 500, 
+      headers, 
+      body: JSON.stringify({ error: err.message || JSON.stringify(err) }) 
+    };
   }
-}
+};
