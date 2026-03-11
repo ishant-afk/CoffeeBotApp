@@ -22,19 +22,20 @@ export default function App() {
           const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
           return {
             id: cols[0],
-            category: cols[2],
-            type: cols[3],
-            name: cols[4],
-            desc: cols[5]?.replace(/"/g, ''),
+            group: cols[1]?.trim(),
+            category: cols[2]?.trim(),
+            type: cols[3]?.trim(),
+            name: cols[4]?.trim(),
+            desc: cols[5]?.replace(/"/g, '').trim(),
             price: cols[8]?.trim()
           };
-        }).filter(item => ['Beverages', 'Food'].includes(item.category));
+        }).filter(item => ['Beverages', 'Food'].includes(item.group));
 
         // Map to UI format
         const items = parsed.map(item => ({
           id: item.id,
           name: item.name,
-          type: item.category === 'Food' ? 'food' : (item.name.toLowerCase().includes('iced') ? 'iced' : 'hot'),
+          type: item.group === 'Food' ? 'food' : (item.name.toLowerCase().includes('iced') ? 'iced' : 'hot'),
           price: item.price,
           desc: item.desc
         }));
