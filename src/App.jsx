@@ -4,27 +4,44 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './App.css'
 
-const MENU_ITEMS = [
-  { id: 1, name: 'Cappuccino', type: 'hot', price: '$4.50', desc: 'A classic coffee drink with espresso, steamed milk, and a layer of foam' },
-  { id: 2, name: 'Latte', type: 'hot', price: '$4.75', desc: 'Smooth and creamy, made with espresso and steamed milk' },
-  { id: 3, name: 'Espresso shot', type: 'hot', price: '$2.00', desc: 'A concentrated boost of coffee to kickstart your day' },
-  { id: 4, name: 'Drinking Chocolate', type: 'hot', price: '$5.00', desc: 'A rich, dark and energizing treat' },
-  { id: 5, name: 'Chocolate Croissant', type: 'food', price: '$3.75', desc: 'A flaky pastry with a delicious chocolate filling' },
-  { id: 6, name: 'Almond Croissant', type: 'food', price: '$4.00', desc: 'Sweet almond-filled flaky pastry' },
-  { id: 7, name: 'Classic Croissant', type: 'food', price: '$3.25', desc: 'Buttery, flaky classic pastry' },
-  { id: 8, name: 'Jumbo Savory Scone', type: 'food', price: '$3.25', desc: 'Freshly baked savory scone' },
-  { id: 9, name: 'Cranberry Scone', type: 'food', price: '$3.50', desc: 'Deliciously tart cranberry scone' },
-  { id: 10, name: 'Oatmeal Scone', type: 'food', price: '$3.25', desc: 'Classic hearty oatmeal scone' },
-  { id: 11, name: 'Ginger Scone', type: 'food', price: '$3.50', desc: 'Spiced ginger scone' },
-  { id: 12, name: 'Chocolate Chip Biscotti', type: 'food', price: '$2.50', desc: 'Crunchy chocolate chip Italian biscuit' },
-  { id: 13, name: 'Hazelnut Biscotti', type: 'food', price: '$2.75', desc: 'Nutty and crispy hazelnut biscuit' },
-  { id: 14, name: 'Ginger Biscotti', type: 'food', price: '$2.50', desc: 'Spiced ginger crunchy biscuit' },
-]
-
 export default function App() {
+  const [menuItems, setMenuItems] = useState([])
   const [messages, setMessages] = useState([
     { id: '1', role: 'bot', text: "Welcome to Merry's Way! ☕ How can I brew some magic for you today?" }
   ])
+
+  useEffect(() => {
+    // Dynamic Menu Loading: Fetch from public/product.csv and parse
+    fetch('/product.csv')
+      .then(res => res.text())
+      .then(csv => {
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',');
+        const parsed = lines.slice(1).filter(l => l.trim()).map(line => {
+          // Basic CSV split (caution: doesn't handle commas inside quotes perfectly but works for this data)
+          const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+          return {
+            id: cols[0],
+            category: cols[2],
+            type: cols[3],
+            name: cols[4],
+            desc: cols[5]?.replace(/"/g, ''),
+            price: cols[8]?.trim()
+          };
+        }).filter(item => ['Beverages', 'Food'].includes(item.category));
+
+        // Map to UI format
+        const items = parsed.map(item => ({
+          id: item.id,
+          name: item.name,
+          type: item.category === 'Food' ? 'food' : (item.name.toLowerCase().includes('iced') ? 'iced' : 'hot'),
+          price: item.price,
+          desc: item.desc
+        }));
+        setMenuItems(items);
+      })
+      .catch(err => console.error("Menu fetch error:", err));
+  }, [])
   const [inputVal, setInputVal] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -37,18 +54,20 @@ export default function App() {
 
   const handleSend = async (text = inputVal) => {
     if (!text.trim()) return
-    const userMsg = { id: Date.now().toString(), role: 'user', text: text.trim() }
-    
+    const userMsg = { id: Date.now().toString(), role: 'user', text: text.trim(), content: text.trim() }
+
     // Add user message to UI immediately
     setMessages(prev => [...prev, userMsg])
     setInputVal('')
     setIsTyping(true)
 
     try {
-      // Assemble history context in Lambda expected format
-      const historyList = [...messages, userMsg]
-        .filter(m => m.role === 'user' || m.role === 'bot')
-        .map(m => m.role === 'user' ? `You: ${m.text}` : `Assistant: ${m.text}`);
+      // Assemble history context in standardized JSON format to preserve 'memory'
+      const historyList = [...messages, userMsg].map(m => ({
+        role: m.role === 'bot' ? 'Assistant' : 'User',
+        content: m.text || m.content,
+        memory: m.memory || {} // CRITICAL: This allows the model to remember the cart/state
+      }));
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -57,24 +76,34 @@ export default function App() {
       });
 
       const data = await response.json();
-      
+
       let botResponseText = '';
+      let botMemory = {};
+
       if (data.statusCode === 200) {
         let body = data.body;
-        // The lambda stringifies the body sometimes based on the python code
         if (typeof body === 'string') {
           body = JSON.parse(body);
         }
         botResponseText = body.content || "Hmm, I didn't get that quite right.";
+        botMemory = body.memory || {};
       } else {
         botResponseText = `Error from Lambda: ${data.error || JSON.stringify(data)}`;
       }
 
-      let botResponse = { id: Date.now().toString(), role: 'bot', text: botResponseText }
-      
-      // Keep interactive UI widgets based on NLP intent
+      let botResponse = {
+        id: Date.now().toString(),
+        role: 'bot',
+        text: botResponseText,
+        content: botResponseText,
+        memory: botMemory
+      }
+
+      // Keep interactive UI widgets based on NLP intent or memory tags
       const lowerArg = text.toLowerCase()
-      if (lowerArg.includes('order') || lowerArg.includes('build')) {
+      const agentUsed = botMemory.agent || ''
+
+      if (lowerArg.includes('order') || lowerArg.includes('build') || agentUsed === 'order_taking_agent') {
         botResponse.component = 'builder'
       } else if (lowerArg.includes('feedback') || lowerArg.includes('review')) {
         botResponse.component = 'feedback'
@@ -98,7 +127,7 @@ export default function App() {
     }
   }
 
-  const filteredMenu = MENU_ITEMS.filter(item => {
+  const filteredMenu = menuItems.filter(item => {
     const matchesCategory = categoryFilter === 'all' || item.type === categoryFilter;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -131,28 +160,34 @@ export default function App() {
                 <div className="message-content">
                   {msg.text && (
                     <div className="markdown-body">
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                          p: ({node, ...props}) => <p style={{ margin: '0 0 0.5rem 0' }} {...props} />,
-                          ul: ({node, ...props}) => <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }} {...props} />,
-                          ol: ({node, ...props}) => <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }} {...props} />,
-                          li: ({node, ...props}) => <li style={{ margin: '0.25rem 0' }} {...props} />,
-                          strong: ({node, ...props}) => <strong style={{ color: 'var(--coffee-accent)' }} {...props} />
+                          p: ({ node, ...props }) => <p style={{ margin: '0 0 0.5rem 0' }} {...props} />,
+                          ul: ({ node, ...props }) => <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }} {...props} />,
+                          ol: ({ node, ...props }) => <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }} {...props} />,
+                          li: ({ node, ...props }) => <li style={{ margin: '0.25rem 0' }} {...props} />,
+                          strong: ({ node, ...props }) => <strong style={{ color: 'var(--coffee-accent)' }} {...props} />
                         }}
                       >
                         {msg.text.replace(/(?<!\n)\* /g, '\n* ')}
                       </ReactMarkdown>
                     </div>
                   )}
-                  
+
+                  {msg.role === 'bot' && msg.memory?.agent && (
+                    <div style={{ marginTop: '4px', opacity: 0.7, fontSize: '0.75rem', color: 'var(--coffee-muted)' }}>
+                      🧠 Agent: <code style={{ color: 'var(--coffee-accent)' }}>{msg.memory.agent.replace(/_/g, ' ')}</code>
+                    </div>
+                  )}
+
                   {/* Dynamic Components embedded in chat */}
                   {msg.component === 'builder' && <OrderBuilder handleSend={handleSend} />}
                   {msg.component === 'moodmatch' && <MoodMatchWidget handleSend={handleSend} />}
                   {msg.component === 'feedback' && <FeedbackWidget />}
                   {msg.component === 'nutrition' && (
                     <div className="rich-content" style={{ fontSize: '0.85rem' }}>
-                      <strong>Allergen Warning:</strong> Please note that our kitchen handles dairy, wheat, and nuts. 
+                      <strong>Allergen Warning:</strong> Please note that our kitchen handles dairy, wheat, and nuts.
                       Let your barista know of any severe allergies!
                     </div>
                   )}
@@ -176,33 +211,33 @@ export default function App() {
 
           <div className="suggestion-chips">
             <button className="chip" onClick={() => handleSend("Surprise me with a drink!")}>
-              <Sparkles size={14} style={{ display: 'inline', marginRight: '4px' }}/> Surprise Me
+              <Sparkles size={14} style={{ display: 'inline', marginRight: '4px' }} /> Surprise Me
             </button>
             <button className="chip" onClick={() => {
               setMessages(prev => [
-                ...prev, 
+                ...prev,
                 { id: Date.now().toString(), role: 'user', text: "I'd like a drink based on my mood." },
                 { id: (Date.now() + 1).toString(), role: 'bot', text: '', component: 'moodmatch' }
               ])
             }}>
-              <Smile size={14} style={{ display: 'inline', marginRight: '4px' }}/> Mood Match
+              <Smile size={14} style={{ display: 'inline', marginRight: '4px' }} /> Mood Match
             </button>
             <button className="chip" onClick={() => setMessages([{ id: '1', role: 'bot', text: "Welcome to Merry's Way! ☕ How can I brew some magic for you today?" }])}>
-              <XCircle size={14} style={{ display: 'inline', marginRight: '4px' }}/> Stop Conversation
+              <XCircle size={14} style={{ display: 'inline', marginRight: '4px' }} /> Stop Conversation
             </button>
           </div>
-          
+
           <div className="chat-input-area">
-            <input 
-              type="text" 
-              className="chat-input" 
+            <input
+              type="text"
+              className="chat-input"
               placeholder="Ask about our coffee, menu, or place an order..."
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={handleKeyDown}
             />
-            <button 
-              className="send-button" 
+            <button
+              className="send-button"
               onClick={() => handleSend()}
               disabled={!inputVal.trim() || isTyping}
             >
@@ -212,26 +247,58 @@ export default function App() {
         </main>
 
         <aside className="sidebar">
+          {/* New Live Order Section */}
+          <div className="sidebar-panel glass-panel order-summary" style={{ flex: 'none', marginBottom: '1rem' }}>
+            <h3><Coffee size={20} /> Your Order</h3>
+            {messages.filter(m => m.role === 'bot' && m.memory?.order).slice(-1).map(msg => {
+              const order = msg.memory.order;
+              const items = Array.isArray(order) ? order : [];
+              const total = items.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
+
+              if (items.length === 0) return <div key="empty" className="menu-desc">No items yet. Start ordering!</div>;
+
+              return (
+                <div key="order-list">
+                  <div className="order-items-list" style={{ maxHeight: '150px', overflowY: 'auto', marginBottom: '10px' }}>
+                    {items.map((item, idx) => (
+                      <div key={idx} className="menu-name" style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
+                        <span>{item.item}</span>
+                        <span className="menu-price">${parseFloat(item.price).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="menu-name" style={{ borderTop: '1px solid var(--coffee-border)', paddingTop: '8px', fontWeight: 'bold' }}>
+                    <span>Total</span>
+                    <span className="menu-price">${total.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {messages.filter(m => m.role === 'bot' && m.memory?.order).length === 0 && (
+              <div className="menu-desc">No items yet. Start ordering!</div>
+            )}
+          </div>
+
           <div className="sidebar-panel glass-panel">
             <h3><Search size={20} /> Menu Browser</h3>
-            
+
             <div className="suggestion-chips" style={{ padding: '0 0 1rem 0', background: 'transparent' }}>
-              <button 
+              <button
                 className={`chip ${categoryFilter === 'all' ? 'active' : ''}`}
                 style={categoryFilter === 'all' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
                 onClick={() => setCategoryFilter('all')}
               >All</button>
-              <button 
+              <button
                 className="chip"
                 style={categoryFilter === 'hot' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
                 onClick={() => setCategoryFilter('hot')}
               >Hot</button>
-              <button 
+              <button
                 className="chip"
                 style={categoryFilter === 'iced' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
                 onClick={() => setCategoryFilter('iced')}
               >Iced</button>
-              <button 
+              <button
                 className="chip"
                 style={categoryFilter === 'food' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
                 onClick={() => setCategoryFilter('food')}
@@ -239,11 +306,11 @@ export default function App() {
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <input 
-                type="text" 
-                className="chat-input" 
+              <input
+                type="text"
+                className="chat-input"
                 style={{ width: '100%', padding: '0.6rem 1rem', fontSize: '0.9rem' }}
-                placeholder="Search menu..." 
+                placeholder="Search menu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -252,7 +319,7 @@ export default function App() {
             <div className="menu-list">
               {filteredMenu.map(item => (
                 <div key={item.id} className="menu-item" onClick={() => handleSend(`Tell me more about ${item.name}`)}>
-                  <div className="menu-img" style={{ 
+                  <div className="menu-img" style={{
                     backgroundImage: `linear-gradient(45deg, var(--coffee-muted), var(--coffee-bg))`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--coffee-accent)'
                   }}>
@@ -260,7 +327,7 @@ export default function App() {
                   </div>
                   <div className="menu-details">
                     <div className="menu-name">
-                      {item.name} 
+                      {item.name}
                       <span className="menu-price">{item.price}</span>
                     </div>
                     <div className="menu-desc">{item.desc}</div>
@@ -279,15 +346,15 @@ function OrderBuilder({ handleSend }) {
   const [step, setStep] = useState(1)
   const [size, setSize] = useState('')
   const [milk, setMilk] = useState('')
-  
+
   if (step === 1) {
     return (
       <div className="rich-content order-builder">
         <strong>1. Choose your size:</strong>
         <div className="options-grid">
           {['Small (8oz)', 'Regular (12oz)', 'Large (16oz)'].map(s => (
-            <button 
-              key={s} 
+            <button
+              key={s}
               className={`option-btn ${size === s ? 'selected' : ''}`}
               onClick={() => { setSize(s); setTimeout(() => setStep(2), 300) }}
             >{s}</button>
@@ -296,16 +363,16 @@ function OrderBuilder({ handleSend }) {
       </div>
     )
   }
-  
+
   if (step === 2) {
     return (
       <div className="rich-content order-builder">
-        <strong>Selected Size:</strong> {size} <br/><br/>
+        <strong>Selected Size:</strong> {size} <br /><br />
         <strong>2. Choose your milk:</strong>
         <div className="options-grid">
           {['Whole Milk', 'Oat Milk', 'Almond Milk'].map(m => (
-            <button 
-              key={m} 
+            <button
+              key={m}
               className={`option-btn ${milk === m ? 'selected' : ''}`}
               onClick={() => { setMilk(m); setTimeout(() => setStep(3), 300) }}
             >{m}</button>
@@ -317,7 +384,7 @@ function OrderBuilder({ handleSend }) {
 
   return (
     <div className="rich-content order-builder" style={{ textAlign: 'center', color: 'var(--coffee-accent)' }}>
-      <strong>✨ Perfect! You chose a {size} drink with {milk}.</strong><br/>
+      <strong>✨ Perfect! You chose a {size} drink with {milk}.</strong><br />
       <button className="chip" style={{ marginTop: '0.5rem' }} onClick={() => handleSend(`what would you suggest for: ${size} and ${milk}`)}>
         Confirm & Send Order
       </button>
@@ -342,9 +409,9 @@ function FeedbackWidget() {
       <div style={{ marginBottom: '0.5rem' }}>Rate your latest order:</div>
       <div className="star-rating">
         {[1, 2, 3, 4, 5].map(star => (
-          <Star 
-            key={star} 
-            size={24} 
+          <Star
+            key={star}
+            size={24}
             fill={star <= rating ? 'var(--coffee-accent)' : 'none'}
             className={`star ${star <= rating ? 'active' : ''}`}
             onClick={() => {
@@ -372,9 +439,9 @@ function MoodMatchWidget({ handleSend }) {
       <strong style={{ color: 'var(--coffee-accent)' }}>How are you feeling right now?</strong>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
         {moods.map((mood, idx) => (
-          <button 
-            key={idx} 
-            className="chip" 
+          <button
+            key={idx}
+            className="chip"
             style={{ margin: 0 }}
             onClick={() => handleSend(mood.prompt)}
           >
