@@ -103,7 +103,7 @@ export default function App() {
       const lowerArg = text.toLowerCase()
       const agentUsed = botMemory.agent || ''
 
-      if (lowerArg.includes('order') || lowerArg.includes('build') || agentUsed === 'order_taking_agent') {
+      if (lowerArg.includes('order') || lowerArg.includes('build')) {
         botResponse.component = 'builder'
       } else if (lowerArg.includes('feedback') || lowerArg.includes('review')) {
         botResponse.component = 'feedback'
@@ -172,12 +172,6 @@ export default function App() {
                       >
                         {msg.text.replace(/(?<!\n)\* /g, '\n* ')}
                       </ReactMarkdown>
-                    </div>
-                  )}
-
-                  {msg.role === 'bot' && msg.memory?.agent && (
-                    <div style={{ marginTop: '4px', opacity: 0.7, fontSize: '0.75rem', color: 'var(--coffee-muted)' }}>
-                      🧠 Agent: <code style={{ color: 'var(--coffee-accent)' }}>{msg.memory.agent.replace(/_/g, ' ')}</code>
                     </div>
                   )}
 
