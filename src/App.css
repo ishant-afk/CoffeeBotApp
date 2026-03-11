@@ -93,28 +93,58 @@ header {
 
 .message.bot {
   align-self: flex-start;
-  background: rgba(44, 27, 20, 0.8);
-  border: 1px solid var(--coffee-border);
+  background: rgba(44, 27, 20, 0.4);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(212, 163, 115, 0.2);
   color: var(--coffee-text);
   border-bottom-left-radius: 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.message-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: flex-start;
+.markdown-body {
+  font-size: 0.95rem;
+  color: var(--coffee-text);
 }
 
-.message-content {
+.markdown-strong {
+  color: var(--coffee-accent);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(212, 163, 115, 0.1);
+}
+
+.markdown-list {
+  margin: 0.5rem 0 0.5rem 1.2rem;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  justify-content: center;
+  gap: 0.25rem;
+}
+
+.markdown-li {
+  position: relative;
+  list-style: none;
+  padding-left: 0.5rem;
+}
+
+.markdown-li::before {
+  content: '☕';
+  position: absolute;
+  left: -1.2rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.markdown-h3 {
+  font-size: 1.1rem;
+  color: var(--coffee-accent);
+  margin-bottom: 0.5rem;
+  border-left: 3px solid var(--coffee-accent);
+  padding-left: 0.75rem;
 }
 
 .rich-content {
   margin-top: 0.5rem;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.3);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
   border: 1px solid rgba(255,255,255,0.05);

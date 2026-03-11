@@ -165,13 +165,22 @@ export default function App() {
                         remarkPlugins={[remarkGfm]}
                         components={{
                           p: ({ node, ...props }) => <p style={{ margin: '0 0 0.5rem 0' }} {...props} />,
-                          ul: ({ node, ...props }) => <ul style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }} {...props} />,
-                          ol: ({ node, ...props }) => <ol style={{ margin: '0.5rem 0 0.5rem 1.5rem', padding: 0 }} {...props} />,
-                          li: ({ node, ...props }) => <li style={{ margin: '0.25rem 0' }} {...props} />,
-                          strong: ({ node, ...props }) => <strong style={{ color: 'var(--coffee-accent)' }} {...props} />
+                          ul: ({ node, ...props }) => <ul className="markdown-list" {...props} />,
+                          ol: ({ node, ...props }) => <ol className="markdown-list" {...props} />,
+                          li: ({ node, ...props }) => <li className="markdown-li" {...props} />,
+                          strong: ({ node, ...props }) => <strong className="markdown-strong" {...props} />,
+                          h1: ({ node, ...props }) => <h1 className="markdown-h1" {...props} />,
+                          h2: ({ node, ...props }) => <h2 className="markdown-h2" {...props} />,
+                          h3: ({ node, ...props }) => <h3 className="markdown-h3" {...props} />
                         }}
                       >
-                        {msg.text.replace(/(?<!\n)\* /g, '\n* ')}
+                        {msg.text
+                          // 1. Ensure *Item: becomes **Item:** for bolding
+                          .replace(/(?:\n|^)\*\s*([A-Za-z\s]+):/g, '\n**$1:**')
+                          // 2. Ensure bullets have spaces
+                          .replace(/(?:\n|^)\*(?!\*)\s*([^\n]+)/g, '\n* $1')
+                          // 3. Prevent double newlines from breaking list groups
+                          .trim()}
                       </ReactMarkdown>
                     </div>
                   )}
