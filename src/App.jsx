@@ -11,40 +11,37 @@ export default function App() {
   ])
 
   useEffect(() => {
-    // Dynamic Menu Loading: Fetch from public/menu_items_text.txt and parse
-    fetch('/menu_items_text.txt')
+    // Dynamic Menu Loading: Fetch from public/products.jsonl and parse
+    fetch('/products.jsonl')
       .then(res => res.text())
       .then(text => {
-        const lines = text.split('\n');
-        const items = [];
+        const items = text.split('\n')
+          .filter(line => line.trim())
+          .map((line, index) => {
+            try {
+              const data = JSON.parse(line);
 
-        lines.forEach((line, index) => {
-          if (line.includes(' - $')) {
-            const [name, price] = line.split(' - ');
+              // Map categories to UI filter types
+              let type = 'hot';
+              if (data.category === 'Bakery') type = 'food';
+              else if (data.name.toLowerCase().includes('iced')) type = 'iced';
+              else if (data.category === 'Flavours') type = 'addon';
 
-            // Infer type/category for the UI
-            let type = 'hot';
-            let desc = 'Freshly prepared at Merry\'s Way.';
-
-            if (name.toLowerCase().includes('scone') || name.toLowerCase().includes('croissant') || name.toLowerCase().includes('biscotti')) {
-              type = 'food';
-              desc = 'Baked fresh daily.';
-            } else if (name.toLowerCase().includes('iced')) {
-              type = 'iced';
-            } else if (name.toLowerCase().includes('syrup')) {
-              type = 'addon';
-              desc = 'The perfect sweet touch.';
+              return {
+                id: index,
+                name: data.name,
+                category: data.category,
+                price: `$${parseFloat(data.price).toFixed(2)}`,
+                desc: data.description,
+                type: type,
+                rating: data.rating
+              };
+            } catch (e) {
+              console.error("JSONL Parse error", e);
+              return null;
             }
-
-            items.push({
-              id: index,
-              name: name.trim(),
-              price: price.trim(),
-              type: type,
-              desc: desc
-            });
-          }
-        });
+          })
+          .filter(item => item !== null);
 
         setMenuItems(items);
       })
