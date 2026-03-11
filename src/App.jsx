@@ -11,34 +11,41 @@ export default function App() {
   ])
 
   useEffect(() => {
-    // Dynamic Menu Loading: Fetch from public/product.csv and parse
-    fetch('/product.csv')
+    // Dynamic Menu Loading: Fetch from public/menu_items_text.txt and parse
+    fetch('/menu_items_text.txt')
       .then(res => res.text())
-      .then(csv => {
-        const lines = csv.split('\n');
-        const headers = lines[0].split(',');
-        const parsed = lines.slice(1).filter(l => l.trim()).map(line => {
-          // Basic CSV split (caution: doesn't handle commas inside quotes perfectly but works for this data)
-          const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-          return {
-            id: cols[0],
-            group: cols[1]?.trim(),
-            category: cols[2]?.trim(),
-            type: cols[3]?.trim(),
-            name: cols[4]?.trim(),
-            desc: cols[5]?.replace(/"/g, '').trim(),
-            price: cols[8]?.trim()
-          };
-        }).filter(item => ['Beverages', 'Food'].includes(item.group));
+      .then(text => {
+        const lines = text.split('\n');
+        const items = [];
 
-        // Map to UI format
-        const items = parsed.map(item => ({
-          id: item.id,
-          name: item.name,
-          type: item.group === 'Food' ? 'food' : (item.name.toLowerCase().includes('iced') ? 'iced' : 'hot'),
-          price: item.price,
-          desc: item.desc
-        }));
+        lines.forEach((line, index) => {
+          if (line.includes(' - $')) {
+            const [name, price] = line.split(' - ');
+
+            // Infer type/category for the UI
+            let type = 'hot';
+            let desc = 'Freshly prepared at Merry\'s Way.';
+
+            if (name.toLowerCase().includes('scone') || name.toLowerCase().includes('croissant') || name.toLowerCase().includes('biscotti')) {
+              type = 'food';
+              desc = 'Baked fresh daily.';
+            } else if (name.toLowerCase().includes('iced')) {
+              type = 'iced';
+            } else if (name.toLowerCase().includes('syrup')) {
+              type = 'addon';
+              desc = 'The perfect sweet touch.';
+            }
+
+            items.push({
+              id: index,
+              name: name.trim(),
+              price: price.trim(),
+              type: type,
+              desc: desc
+            });
+          }
+        });
+
         setMenuItems(items);
       })
       .catch(err => console.error("Menu fetch error:", err));
