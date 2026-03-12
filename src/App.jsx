@@ -16,6 +16,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMenuLoading, setIsMenuLoading] = useState(true)
+  const [persistedOrders, setPersistedOrders] = useState([])
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -136,6 +137,30 @@ export default function App() {
     }
   }
 
+  const handleFinalizeOrder = (orderItems) => {
+    // Collect order data for storage
+    const newOrder = {
+      orderId: `ORD-${Date.now()}`,
+      items: orderItems,
+      total: orderItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2),
+      timestamp: new Date().toISOString()
+    };
+
+    // Store in session state (accessible for future functionality)
+    setPersistedOrders(prev => [...prev, newOrder]);
+
+    // Add local confirmation message to chat instead of going to AI
+    const successMsg = {
+      id: Date.now().toString(),
+      role: 'bot',
+      text: "✨ **Order Confirmed!** ✨\n\nYour order has been placed successfully. We've started brewing your magic! You can find your receipt in your order history later.",
+      memory: { order: [] } // Reset the visual order summary
+    };
+
+    setMessages(prev => [...prev, successMsg]);
+    console.log("Order finalized and stored in session:", newOrder);
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -227,7 +252,7 @@ export default function App() {
                   {msg.component === 'builder' && <OrderBuilder handleSend={handleSend} />}
                   {msg.component === 'moodmatch' && <MoodMatchWidget handleSend={handleSend} />}
                   {msg.component === 'feedback' && <FeedbackWidget />}
-                  {msg.component === 'order_review' && <OrderReviewWidget order={msg.memory?.order} handleSend={handleSend} />}
+                  {msg.component === 'order_review' && <OrderReviewWidget order={msg.memory?.order} handleSend={handleSend} handleFinalizeOrder={handleFinalizeOrder} />}
                   {msg.component === 'nutrition' && (
                     <div className="rich-content" style={{ fontSize: '0.85rem' }}>
                       <strong>Allergen Warning:</strong> Please note that our kitchen handles dairy, wheat, and nuts.
@@ -486,7 +511,7 @@ function MoodMatchWidget({ handleSend }) {
     </div>
   )
 }
-function OrderReviewWidget({ order, handleSend }) {
+function OrderReviewWidget({ order, handleSend, handleFinalizeOrder }) {
   if (!order || order.length === 0) return null;
   const total = order.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2);
 
@@ -516,7 +541,7 @@ function OrderReviewWidget({ order, handleSend }) {
         </div>
       </div>
       <div className="review-actions" style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
-        <button className="confirm-btn" onClick={() => handleSend("Yes, please proceed with this order!")}>
+        <button className="confirm-btn" onClick={() => handleFinalizeOrder(order)}>
           Confirm & Pay
         </button>
         <button className="edit-btn" onClick={() => handleSend("I want to change my order")}>
