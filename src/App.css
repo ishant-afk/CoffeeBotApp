@@ -319,6 +319,54 @@ header.main-header {
   animation: slideIn 0.3s ease-out;
 }
 
+/* Order Summary Receipt Style */
+.order-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+}
+
+.order-row-divider {
+  flex: 1;
+  border-bottom: 1px dotted rgba(212, 163, 115, 0.2);
+  margin-bottom: 4px;
+}
+
+.order-item-name {
+  color: var(--coffee-text);
+  font-weight: 500;
+  max-width: 70%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.order-item-price {
+  color: var(--coffee-accent);
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.total-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--coffee-border);
+  font-weight: bold;
+}
+
+.total-row span:first-child {
+  font-size: 1rem;
+  color: var(--coffee-accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.total-row .order-item-price {
+  font-size: 1.125rem;
+}
+
 .badge {
   background: var(--coffee-accent);
   color: var(--coffee-bg);

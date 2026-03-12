@@ -288,17 +288,19 @@ export default function App() {
                 <h3 style={{ margin: 0 }}><Coffee size={20} /> Your Order</h3>
                 <span className="badge">{currentOrderItems.length} items</span>
               </div>
-              <div className="order-items-list" style={{ maxHeight: '150px', overflowY: 'auto', marginBottom: '10px' }}>
+              <div className="order-items-list" style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: '12px' }}>
                 {currentOrderItems.map((item, idx) => (
-                  <div key={idx} className="menu-name" style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
-                    <span>{item.item}</span>
-                    <span className="menu-price">${parseFloat(item.price).toFixed(2)}</span>
+                  <div key={idx} className="order-row animate-fade-in" style={{ animationDelay: `${idx * 0.05}s` }}>
+                    <span className="order-item-name">{item.item}</span>
+                    <div className="order-row-divider"></div>
+                    <span className="order-item-price">${parseFloat(item.price).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
-              <div className="menu-name" style={{ borderTop: '1px solid var(--coffee-border)', paddingTop: '8px', fontWeight: 'bold' }}>
+              <div className="order-row total-row">
                 <span>Total</span>
-                <span className="menu-price">
+                <div className="order-row-divider"></div>
+                <span className="order-item-price">
                   ${currentOrderItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2)}
                 </span>
               </div>
