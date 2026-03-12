@@ -637,3 +637,26 @@ header.main-header {
   color: var(--coffee-text);
   border-color: var(--coffee-accent);
 }
+
+.place-order-btn {
+  background: var(--coffee-accent);
+  color: var(--coffee-bg);
+  border: none;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(212, 163, 115, 0.2);
+}
+
+.place-order-btn:hover {
+  background: #e6b885;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(212, 163, 115, 0.3);
+}
+
+.place-order-btn:active {
+  transform: translateY(0);
+}

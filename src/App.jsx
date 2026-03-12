@@ -313,6 +313,16 @@ export default function App() {
                   ${currentOrderItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2)}
                 </span>
               </div>
+              <button
+                className="place-order-btn animate-fade-in"
+                style={{ marginTop: '1rem', width: '100%' }}
+                onClick={() => {
+                  handleSend("I'd like to place my order now.");
+                  if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+                }}
+              >
+                Place Order
+              </button>
             </div>
           )}
 
