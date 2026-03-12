@@ -313,16 +313,35 @@ export default function App() {
                   ${currentOrderItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2)}
                 </span>
               </div>
-              <button
-                className="place-order-btn animate-fade-in"
-                style={{ marginTop: '1rem', width: '100%' }}
-                onClick={() => {
-                  handleSend("I'd like to place my order now.");
-                  if (window.innerWidth < 768) setIsMobileMenuOpen(false);
-                }}
-              >
-                Place Order
-              </button>
+              <div className="sidebar-actions" style={{ display: 'flex', gap: '8px', marginTop: '1rem' }}>
+                <button
+                  className="place-order-btn animate-fade-in"
+                  style={{ flex: 2 }}
+                  onClick={() => {
+                    const reviewMsg = {
+                      id: Date.now().toString(),
+                      role: 'bot',
+                      text: "I've prepared your order summary. Please review it below:",
+                      component: 'order_review',
+                      memory: { order: currentOrderItems }
+                    };
+                    setMessages(prev => [...prev, reviewMsg]);
+                    if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Place Order
+                </button>
+                <button
+                  className="edit-btn animate-fade-in"
+                  style={{ flex: 1, padding: '0.75rem' }}
+                  onClick={() => {
+                    handleSend("I'd like to edit my order.");
+                    if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Edit
+                </button>
+              </div>
             </div>
           )}
 
