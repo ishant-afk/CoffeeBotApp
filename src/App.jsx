@@ -150,10 +150,11 @@ export default function App() {
     setPersistedOrders(prev => [...prev, newOrder]);
 
     // Add local confirmation message to chat instead of going to AI
+    const itemsSummary = orderItems.map(i => `* ${i.item} ($${parseFloat(i.price).toFixed(2)})`).join('\n');
     const successMsg = {
       id: Date.now().toString(),
       role: 'bot',
-      text: "✨ **Order Confirmed!** ✨\n\nYour order has been placed successfully. We've started brewing your magic! You can find your receipt in your order history later.",
+      text: `✨ **Order Confirmed!** ✨\n\n**OrderID:** \`${newOrder.orderId}\`\n\n**Your Items:**\n${itemsSummary}\n\n**Total:** **$${newOrder.total}**\n\nYour order has been placed successfully. We've started brewing your magic!`,
       memory: { order: [] } // Reset the visual order summary
     };
 
