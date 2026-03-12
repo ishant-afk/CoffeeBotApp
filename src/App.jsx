@@ -119,6 +119,14 @@ export default function App() {
         botResponse.component = 'moodmatch'
       }
 
+      // Priority 3: Trigger Order Review card if finalizing an order
+      if (agentUsed === 'order_taking_agent' && botMemory.order?.length > 0) {
+        const botText = botResponseText.toLowerCase();
+        if (botText.includes('total') || botText.includes('thank you for the order')) {
+          botResponse.component = 'order_review';
+        }
+      }
+
       setMessages(prev => [...prev, botResponse])
     } catch (err) {
       console.error(err)
@@ -219,6 +227,7 @@ export default function App() {
                   {msg.component === 'builder' && <OrderBuilder handleSend={handleSend} />}
                   {msg.component === 'moodmatch' && <MoodMatchWidget handleSend={handleSend} />}
                   {msg.component === 'feedback' && <FeedbackWidget />}
+                  {msg.component === 'order_review' && <OrderReviewWidget order={msg.memory?.order} handleSend={handleSend} />}
                   {msg.component === 'nutrition' && (
                     <div className="rich-content" style={{ fontSize: '0.85rem' }}>
                       <strong>Allergen Warning:</strong> Please note that our kitchen handles dairy, wheat, and nuts.
@@ -444,6 +453,46 @@ function MoodMatchWidget({ handleSend }) {
             {mood.label}
           </button>
         ))}
+      </div>
+    </div>
+  )
+}
+function OrderReviewWidget({ order, handleSend }) {
+  if (!order || order.length === 0) return null;
+  const total = order.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2);
+
+  return (
+    <div className="rich-content order-review-card animate-slide-in">
+      <div className="review-header">
+        <Sparkles size={18} style={{ color: 'var(--coffee-accent)' }} />
+        <strong style={{ color: 'var(--coffee-accent)', marginLeft: '8px' }}>Review Your Order</strong>
+      </div>
+      <div className="review-body" style={{ margin: '1rem 0' }}>
+        <p style={{ fontSize: '0.85rem', marginBottom: '1rem', color: 'var(--coffee-muted)' }}>
+          Please check your selection before we finalize the brew:
+        </p>
+        <div className="order-items-list">
+          {order.map((item, idx) => (
+            <div key={idx} className="order-row">
+              <span className="order-item-name">{item.item}</span>
+              <div className="order-row-divider"></div>
+              <span className="order-item-price">${parseFloat(item.price).toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="order-row total-row" style={{ borderTop: '1px solid rgba(212, 163, 115, 0.3)', marginTop: '8px', paddingTop: '8px' }}>
+          <strong>Total Amount</strong>
+          <div className="order-row-divider"></div>
+          <span className="order-item-price">${total}</span>
+        </div>
+      </div>
+      <div className="review-actions" style={{ display: 'flex', gap: '10px', marginTop: '1rem' }}>
+        <button className="confirm-btn" onClick={() => handleSend("Yes, please proceed with this order!")}>
+          Confirm & Pay
+        </button>
+        <button className="edit-btn" onClick={() => handleSend("I want to change my order")}>
+          Edit
+        </button>
       </div>
     </div>
   )

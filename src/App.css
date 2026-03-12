@@ -591,3 +591,49 @@ header.main-header {
   width: 90%;
   border-radius: 4px;
 }
+
+/* Order Review Card Styling */
+.order-review-card {
+  border-left: 2px solid var(--coffee-accent);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+}
+
+.confirm-btn {
+  flex: 2;
+  background: var(--coffee-accent);
+  color: var(--coffee-bg);
+  border: none;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(212, 163, 115, 0.2);
+}
+
+.confirm-btn:hover {
+  background: #e6b885;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 163, 115, 0.3);
+}
+
+.edit-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--coffee-border);
+  color: var(--coffee-muted);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--coffee-text);
+  border-color: var(--coffee-accent);
+}
