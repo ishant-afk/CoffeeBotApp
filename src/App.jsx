@@ -160,6 +160,14 @@ export default function App() {
 
     setMessages(prev => [...prev, successMsg]);
     console.log("Order finalized and stored in session:", newOrder);
+
+    // Auto-reset conversation after 10 seconds for the next user
+    setTimeout(() => {
+      setMessages([{ id: '1', role: 'bot', text: "Welcome to Merry's Way! ☕ How can I brew some magic for you today?" }]);
+      setCategoryFilter('all');
+      setSearchQuery('');
+      setIsMobileMenuOpen(false);
+    }, 10000);
   }
 
   const handleKeyDown = (e) => {
