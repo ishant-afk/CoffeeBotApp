@@ -108,9 +108,7 @@ export default function App() {
       const lowerArg = text.toLowerCase()
       const agentUsed = botMemory.agent || ''
 
-      if (lowerArg.includes('order') || lowerArg.includes('build')) {
-        botResponse.component = 'builder'
-      } else if (lowerArg.includes('feedback') || lowerArg.includes('review')) {
+      if (lowerArg.includes('feedback') || lowerArg.includes('review')) {
         botResponse.component = 'feedback'
       } else if (lowerArg.includes('mood') || lowerArg.includes('feel') || lowerArg.includes('tired')) {
         botResponse.component = 'moodmatch'
@@ -349,55 +347,6 @@ export default function App() {
   )
 }
 
-function OrderBuilder({ handleSend }) {
-  const [step, setStep] = useState(1)
-  const [size, setSize] = useState('')
-  const [milk, setMilk] = useState('')
-
-  if (step === 1) {
-    return (
-      <div className="rich-content order-builder">
-        <strong>1. Choose your size:</strong>
-        <div className="options-grid">
-          {['Small (8oz)', 'Regular (12oz)', 'Large (16oz)'].map(s => (
-            <button
-              key={s}
-              className={`option-btn ${size === s ? 'selected' : ''}`}
-              onClick={() => { setSize(s); setTimeout(() => setStep(2), 300) }}
-            >{s}</button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  if (step === 2) {
-    return (
-      <div className="rich-content order-builder">
-        <strong>Selected Size:</strong> {size} <br /><br />
-        <strong>2. Choose your milk:</strong>
-        <div className="options-grid">
-          {['Whole Milk', 'Oat Milk', 'Almond Milk'].map(m => (
-            <button
-              key={m}
-              className={`option-btn ${milk === m ? 'selected' : ''}`}
-              onClick={() => { setMilk(m); setTimeout(() => setStep(3), 300) }}
-            >{m}</button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="rich-content order-builder" style={{ textAlign: 'center', color: 'var(--coffee-accent)' }}>
-      <strong>✨ Perfect! You chose a {size} drink with {milk}.</strong><br />
-      <button className="chip" style={{ marginTop: '0.5rem' }} onClick={() => handleSend(`what would you suggest for: ${size} and ${milk}`)}>
-        Confirm & Send Order
-      </button>
-    </div>
-  )
-}
 
 function FeedbackWidget() {
   const [rating, setRating] = useState(0)
