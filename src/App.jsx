@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Coffee, Send, Sparkles, Smile, MessageSquare, Star, Search, XCircle } from 'lucide-react'
+import { Coffee, Send, Sparkles, Smile, MessageSquare, Star, Search, XCircle, Plus, Utensils, Droplets, Snowflake } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './App.css'
@@ -138,6 +138,10 @@ export default function App() {
     return matchesCategory && matchesSearch;
   });
 
+  const availableTypes = ['all', ...new Set(menuItems.map(i => i.type))];
+  const lastBotWithOrder = messages.filter(m => m.role === 'bot' && m.memory?.order).slice(-1)[0];
+  const currentOrderItems = Array.isArray(lastBotWithOrder?.memory?.order) ? lastBotWithOrder.memory.order : [];
+
   return (
     <div className="app-container">
       <header className="glass-panel">
@@ -255,62 +259,46 @@ export default function App() {
         </main>
 
         <aside className="sidebar">
-          {/* New Live Order Section */}
-          <div className="sidebar-panel glass-panel order-summary" style={{ flex: 'none', marginBottom: '1rem' }}>
-            <h3><Coffee size={20} /> Your Order</h3>
-            {messages.filter(m => m.role === 'bot' && m.memory?.order).slice(-1).map(msg => {
-              const order = msg.memory.order;
-              const items = Array.isArray(order) ? order : [];
-              const total = items.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0);
-
-              if (items.length === 0) return <div key="empty" className="menu-desc">No items yet. Start ordering!</div>;
-
-              return (
-                <div key="order-list">
-                  <div className="order-items-list" style={{ maxHeight: '150px', overflowY: 'auto', marginBottom: '10px' }}>
-                    {items.map((item, idx) => (
-                      <div key={idx} className="menu-name" style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
-                        <span>{item.item}</span>
-                        <span className="menu-price">${parseFloat(item.price).toFixed(2)}</span>
-                      </div>
-                    ))}
+          {/* Collapsible Order Section */}
+          {currentOrderItems.length > 0 && (
+            <div className="sidebar-panel glass-panel order-summary animate-slide-in" style={{ flex: 'none', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0 }}><Coffee size={20} /> Your Order</h3>
+                <span className="badge">{currentOrderItems.length} items</span>
+              </div>
+              <div className="order-items-list" style={{ maxHeight: '150px', overflowY: 'auto', marginBottom: '10px' }}>
+                {currentOrderItems.map((item, idx) => (
+                  <div key={idx} className="menu-name" style={{ fontSize: '0.85rem', marginBottom: '4px' }}>
+                    <span>{item.item}</span>
+                    <span className="menu-price">${parseFloat(item.price).toFixed(2)}</span>
                   </div>
-                  <div className="menu-name" style={{ borderTop: '1px solid var(--coffee-border)', paddingTop: '8px', fontWeight: 'bold' }}>
-                    <span>Total</span>
-                    <span className="menu-price">${total.toFixed(2)}</span>
-                  </div>
-                </div>
-              );
-            })}
-            {messages.filter(m => m.role === 'bot' && m.memory?.order).length === 0 && (
-              <div className="menu-desc">No items yet. Start ordering!</div>
-            )}
-          </div>
+                ))}
+              </div>
+              <div className="menu-name" style={{ borderTop: '1px solid var(--coffee-border)', paddingTop: '8px', fontWeight: 'bold' }}>
+                <span>Total</span>
+                <span className="menu-price">
+                  ${currentOrderItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
 
-          <div className="sidebar-panel glass-panel">
+          <div className="sidebar-panel glass-panel" style={{ flex: 1 }}>
             <h3><Search size={20} /> Menu Browser</h3>
 
             <div className="suggestion-chips" style={{ padding: '0 0 1rem 0', background: 'transparent' }}>
-              <button
-                className={`chip ${categoryFilter === 'all' ? 'active' : ''}`}
-                style={categoryFilter === 'all' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
-                onClick={() => setCategoryFilter('all')}
-              >All</button>
-              <button
-                className="chip"
-                style={categoryFilter === 'hot' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
-                onClick={() => setCategoryFilter('hot')}
-              >Hot</button>
-              <button
-                className="chip"
-                style={categoryFilter === 'iced' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
-                onClick={() => setCategoryFilter('iced')}
-              >Iced</button>
-              <button
-                className="chip"
-                style={categoryFilter === 'food' ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
-                onClick={() => setCategoryFilter('food')}
-              >Food</button>
+              {['all', 'hot', 'iced', 'food', 'addon'].map(type => (
+                availableTypes.includes(type) && (
+                  <button
+                    key={type}
+                    className={`chip ${categoryFilter === type ? 'active' : ''}`}
+                    style={categoryFilter === type ? { background: 'var(--coffee-accent)', color: 'var(--coffee-bg)' } : {}}
+                    onClick={() => setCategoryFilter(type)}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                )
+              ))}
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
@@ -326,19 +314,30 @@ export default function App() {
 
             <div className="menu-list">
               {filteredMenu.map(item => (
-                <div key={item.id} className="menu-item" onClick={() => handleSend(`Tell me more about ${item.name}`)}>
-                  <div className="menu-img" style={{
-                    backgroundImage: `linear-gradient(45deg, var(--coffee-muted), var(--coffee-bg))`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--coffee-accent)'
-                  }}>
-                    <Coffee size={24} />
+                <div key={item.id} className="menu-item group" onClick={() => handleSend(`Tell me more about ${item.name}`)}>
+                  <div className="menu-img">
+                    {item.type === 'food' ? <Utensils size={24} /> :
+                      item.type === 'iced' ? <Snowflake size={24} /> :
+                        item.type === 'addon' ? <Droplets size={24} /> :
+                          <Coffee size={24} />}
                   </div>
                   <div className="menu-details">
                     <div className="menu-name">
-                      {item.name}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {item.name}
+                        {item.rating && <span className="rating-tag"><Star size={10} fill="currentColor" /> {item.rating}</span>}
+                      </div>
                       <span className="menu-price">{item.price}</span>
                     </div>
-                    <div className="menu-desc">{item.desc}</div>
+                    <div className="menu-desc line-clamp-2">{item.desc}</div>
+                    <div className="menu-footer">
+                      <button className="add-btn" onClick={(e) => {
+                        e.stopPropagation();
+                        handleSend(`I'd like to order a ${item.name}`);
+                      }}>
+                        <Plus size={14} /> Add to Order
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
