@@ -243,7 +243,53 @@ header {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  overflow: hidden;
+  overflow: visible;
+  /* Restore visibility for scrollbars */
+  min-height: 0;
+}
+
+.sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--coffee-accent);
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
+  /* Space for scrollbar */
+}
+
+.menu-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--coffee-border);
 }
 
 @keyframes slideIn {
