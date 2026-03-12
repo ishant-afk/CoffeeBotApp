@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Coffee, Send, Sparkles, Smile, MessageSquare, Star, Search, XCircle, Plus, Utensils, Droplets, Snowflake } from 'lucide-react'
+import { Coffee, Send, Sparkles, Smile, MessageSquare, Star, Search, XCircle, Plus, Utensils, Droplets, Snowflake, Menu as MenuIcon, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './App.css'
@@ -10,8 +10,17 @@ export default function App() {
     { id: '1', role: 'bot', text: "Welcome to Merry's Way! ☕ How can I brew some magic for you today?" }
   ])
 
+  const [inputVal, setInputVal] = useState('')
+  const [isTyping, setIsTyping] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMenuLoading, setIsMenuLoading] = useState(true)
+  const bottomRef = useRef(null)
+
   useEffect(() => {
-    // Dynamic Menu Loading: Fetch from public/products.jsonl and parse
+    // Dynamic Menu Loading
+    setIsMenuLoading(true);
     fetch('/products.jsonl')
       .then(res => res.text())
       .then(text => {
@@ -20,8 +29,6 @@ export default function App() {
           .map((line, index) => {
             try {
               const data = JSON.parse(line);
-
-              // Map categories to UI filter types
               let type = 'hot';
               if (data.category === 'Bakery') type = 'food';
               else if (data.name.toLowerCase().includes('iced')) type = 'iced';
@@ -37,21 +44,19 @@ export default function App() {
                 rating: data.rating
               };
             } catch (e) {
-              console.error("JSONL Parse error", e);
               return null;
             }
           })
           .filter(item => item !== null);
 
         setMenuItems(items);
+        setIsMenuLoading(false);
       })
-      .catch(err => console.error("Menu fetch error:", err));
+      .catch(err => {
+        console.error("Menu fetch error:", err);
+        setIsMenuLoading(false);
+      });
   }, [])
-  const [inputVal, setInputVal] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -141,22 +146,41 @@ export default function App() {
   const currentOrderItems = Array.isArray(lastBotWithOrder?.memory?.order) ? lastBotWithOrder.memory.order : [];
 
   return (
-    <div className="app-container">
-      <header className="glass-panel">
+    <div className={`app-container ${isMobileMenuOpen ? 'menu-open' : ''}`}>
+      <header className="glass-panel main-header">
         <div className="logo-section">
           <div className="logo-icon">
             <Coffee size={24} />
           </div>
           <div className="logo-text">
-            <h1>Merry's Way Coffee</h1>
-            <span>Neighborhood coffee shop in Greenwich Village, NYC</span>
+            <h1>Merry's Way</h1>
+            <span className="desktop-only text-muted">Greenwich Village, NYC</span>
           </div>
         </div>
+        <button className="mobile-only menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <X size={24} /> : <MenuIcon size={24} />}
+        </button>
       </header>
 
       <div className="main-content">
         <main className="chat-section">
           <div className="chat-messages">
+            {messages.length === 1 && (
+              <div className="quick-start-container animate-fade-in">
+                <div className="quick-start-grid">
+                  <div className="quick-card" onClick={() => handleSend("What are your best sellers?")}>
+                    <Sparkles size={20} className="icon" />
+                    <h4>Best Sellers</h4>
+                    <p>Try our fan favorites</p>
+                  </div>
+                  <div className="quick-card" onClick={() => setCategoryFilter('food')}>
+                    <Utensils size={20} className="icon" />
+                    <h4>Fresh Bakery</h4>
+                    <p>Scones & Croissants</p>
+                  </div>
+                </div>
+              </div>
+            )}
             {messages.map((msg) => (
               <div key={msg.id} className={`message ${msg.role}`}>
                 {msg.role === 'bot' && (
@@ -311,34 +335,48 @@ export default function App() {
             </div>
 
             <div className="menu-list">
-              {filteredMenu.map(item => (
-                <div key={item.id} className="menu-item group" onClick={() => handleSend(`Tell me more about ${item.name}`)}>
-                  <div className="menu-img">
-                    {item.type === 'food' ? <Utensils size={24} /> :
-                      item.type === 'iced' ? <Snowflake size={24} /> :
-                        item.type === 'addon' ? <Droplets size={24} /> :
-                          <Coffee size={24} />}
+              {isMenuLoading ? (
+                /* Skeleton Loader */
+                [1, 2, 3, 4].map(i => (
+                  <div key={i} className="menu-item skeleton-item">
+                    <div className="menu-img skeleton"></div>
+                    <div className="menu-details">
+                      <div className="skeleton title"></div>
+                      <div className="skeleton desc"></div>
+                    </div>
                   </div>
-                  <div className="menu-details">
-                    <div className="menu-name">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {item.name}
-                        {item.rating && <span className="rating-tag"><Star size={10} fill="currentColor" /> {item.rating}</span>}
+                ))
+              ) : (
+                filteredMenu.map(item => (
+                  <div key={item.id} className="menu-item group" onClick={() => handleSend(`Tell me more about ${item.name}`)}>
+                    <div className="menu-img">
+                      {item.type === 'food' ? <Utensils size={24} /> :
+                        item.type === 'iced' ? <Snowflake size={24} /> :
+                          item.type === 'addon' ? <Droplets size={24} /> :
+                            <Coffee size={24} />}
+                    </div>
+                    <div className="menu-details">
+                      <div className="menu-name">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {item.name}
+                          {item.rating && <span className="rating-tag"><Star size={10} fill="currentColor" /> {item.rating}</span>}
+                        </div>
+                        <span className="menu-price">{item.price}</span>
                       </div>
-                      <span className="menu-price">{item.price}</span>
-                    </div>
-                    <div className="menu-desc line-clamp-2">{item.desc}</div>
-                    <div className="menu-footer">
-                      <button className="add-btn" onClick={(e) => {
-                        e.stopPropagation();
-                        handleSend(`I'd like to order a ${item.name}`);
-                      }}>
-                        <Plus size={14} /> Add to Order
-                      </button>
+                      <div className="menu-desc line-clamp-2">{item.desc}</div>
+                      <div className="menu-footer">
+                        <button className="add-btn" onClick={(e) => {
+                          e.stopPropagation();
+                          handleSend(`I'd like to order a ${item.name}`);
+                          if (window.innerWidth < 768) setIsMobileMenuOpen(false);
+                        }}>
+                          <Plus size={14} /> Add to Order
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </aside>
