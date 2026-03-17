@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Coffee, Send, Sparkles, Smile, MessageSquare, Star, Search, XCircle, Plus, Utensils, Droplets, Snowflake, Menu as MenuIcon, X } from 'lucide-react'
+import { Coffee, Send, Sparkles, Star, Search, XCircle, Plus, Utensils, Droplets, Snowflake, Menu as MenuIcon, X, Smile } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './App.css'
@@ -73,11 +73,12 @@ export default function App() {
     setIsTyping(true)
 
     try {
-      // Assemble history context in standardized JSON format to preserve 'memory'
+      // Assemble history context in standardized JSON format
+      // Note: We no longer send the 'memory' object back to the server to save bandwidth, 
+      // as the optimized chatbot backend extracts state internally now.
       const historyList = [...messages, userMsg].map(m => ({
         role: m.role === 'bot' ? 'Assistant' : 'User',
-        content: m.text || m.content,
-        memory: m.memory || {} // CRITICAL: This allows the model to remember the cart/state
+        content: m.text || m.content
       }));
 
       const response = await fetch('/api/chat', {
@@ -258,7 +259,6 @@ export default function App() {
                   )}
 
                   {/* Dynamic Components embedded in chat */}
-                  {msg.component === 'builder' && <OrderBuilder handleSend={handleSend} />}
                   {msg.component === 'moodmatch' && <MoodMatchWidget handleSend={handleSend} />}
                   {msg.component === 'feedback' && <FeedbackWidget />}
                   {msg.component === 'order_review' && <OrderReviewWidget order={msg.memory?.order} handleSend={handleSend} handleFinalizeOrder={handleFinalizeOrder} />}

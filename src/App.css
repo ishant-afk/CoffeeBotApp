@@ -1,4 +1,23 @@
-/* App Container styles */
+/*
+ * App.css — Merry's Way Coffee Bot Styles
+ * =========================================
+ * Table of Contents:
+ *   1. Layout (App Container, Header, Main Content)
+ *   2. Chat Section (Messages, Markdown, Rich Content)
+ *   3. Input Area (Chat Input, Suggestion Chips)
+ *   4. Sidebar (Panels, Menu Browser, Menu Items)
+ *   5. Animations (fadeIn, slideIn, bounce)
+ *   6. Order Summary (Receipt rows, Totals, Badges)
+ *   7. Menu Item Enhancements (Images, Ratings, Hover)
+ *   8. Responsive / Mobile (Drawer, Toggle)
+ *   9. Quick Start Cards
+ *  10. Skeleton Loaders
+ *  11. Order Review Card (Confirm/Edit/Place Order buttons)
+ */
+
+/* ==========================================================
+   1. LAYOUT
+   ========================================================== */
 .app-container {
   display: flex;
   flex-direction: column;
@@ -60,7 +79,9 @@ header.main-header {
   min-height: 0;
 }
 
-/* Chat Section */
+/* ==========================================================
+   2. CHAT SECTION
+   ========================================================== */
 .chat-section {
   flex: 1;
   display: flex;
@@ -168,7 +189,9 @@ header.main-header {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Input Area */
+/* ==========================================================
+   3. INPUT AREA
+   ========================================================== */
 .chat-input-area {
   padding: 1rem 1.5rem;
   background: rgba(20, 11, 8, 0.95);
@@ -247,8 +270,9 @@ header.main-header {
   background: #e6b885;
 }
 
-/* Sidebar Section */
-/* Responsive Layout improvements */
+/* ==========================================================
+   4. SIDEBAR
+   ========================================================== */
 .sidebar {
   width: 340px;
   display: flex;
@@ -303,6 +327,9 @@ header.main-header {
   border-color: var(--coffee-border);
 }
 
+/* ==========================================================
+   5. ANIMATIONS
+   ========================================================== */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -319,7 +346,9 @@ header.main-header {
   animation: slideIn 0.3s ease-out;
 }
 
-/* Order Summary Receipt Style */
+/* ==========================================================
+   6. ORDER SUMMARY
+   ========================================================== */
 .order-row {
   display: flex;
   align-items: flex-end;
@@ -376,7 +405,9 @@ header.main-header {
   font-weight: bold;
 }
 
-/* Menu Item Enhancements */
+/* ==========================================================
+   7. MENU ITEM ENHANCEMENTS
+   ========================================================== */
 .menu-img {
   width: 50px;
   height: 50px;
@@ -449,6 +480,9 @@ header.main-header {
   color: var(--coffee-bg);
 }
 
+/* ==========================================================
+   8. RESPONSIVE / MOBILE
+   ========================================================== */
 @media (max-width: 768px) {
   .desktop-only {
     display: none;
@@ -507,7 +541,9 @@ header.main-header {
   }
 }
 
-/* Quick Start Cards */
+/* ==========================================================
+   9. QUICK START CARDS
+   ========================================================== */
 .quick-start-container {
   padding: 1rem 0;
   margin-bottom: 1.5rem;
@@ -555,7 +591,9 @@ header.main-header {
   color: var(--coffee-muted);
 }
 
-/* Skeleton Loaders */
+/* ==========================================================
+   10. SKELETON LOADERS
+   ========================================================== */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -592,7 +630,9 @@ header.main-header {
   border-radius: 4px;
 }
 
-/* Order Review Card Styling */
+/* ==========================================================
+   11. ORDER REVIEW & ACTION BUTTONS
+   ========================================================== */
 .order-review-card {
   border-left: 2px solid var(--coffee-accent);
 }
